@@ -59,6 +59,7 @@ class GeneticAlgorithm:
         # Iniciar na entrada
         linha, coluna = self.maze.pos_E
         path = [(linha, coluna)]
+        visited_cells = {(linha, coluna)}
         
         # Simular cada movimento
         for direction in chromosome:
@@ -66,11 +67,13 @@ class GeneticAlgorithm:
             
             if result is None:
                 # Movimento inválido (parede ou fora dos limites)
-                # Penalidade: retornar fitness baixo
-                return 0.0, (linha, coluna), path
+                # NÃO retornar imediatamente!
+                # Simplesmente pular este movimento e tentar o próximo
+                continue
             
             linha, coluna = result
             path.append((linha, coluna))
+            visited_cells.add((linha, coluna))
             
             # Verificar se encontrou a saída
             if self.maze.get_cell(linha, coluna) == 'S':
@@ -78,14 +81,31 @@ class GeneticAlgorithm:
                 return 1000000.0, (linha, coluna), path
         
         # Caminho válido mas não encontrou S
-        # Fitness baseado na distância da entrada (incentiva exploração)
+        # Fitness baseado em:
+        # 1. Distância da entrada (incentiva exploração)
+        # 2. Número de células únicas visitadas (premia diversidade)
+        # 3. Proximidade à saída (bônus se chegar perto)
+        
         linha_entrada, coluna_entrada = self.maze.pos_E
-        distance_from_start = abs(linha - linha_entrada) + abs(coluna - coluna_entrada)
+        linha_saida, coluna_saida = self.maze.pos_S
         
-        # Adicionar um bônus por células únicas visitadas (diversidade)
-        unique_cells = len(set(path))
+        # Distância do ponto final até a saída (quanto menor, melhor)
+        distance_to_exit = abs(linha - linha_saida) + abs(coluna - coluna_saida)
         
-        fitness = distance_from_start + unique_cells * 0.5
+        # Quanto mais células únicas exploradas, melhor
+        exploration_bonus = len(visited_cells) * 10.0
+        
+        # Penalidade por estar longe da saída
+        distance_penalty = distance_to_exit * 5.0
+        
+        # Bônus por ter se movido (não ficar parado)
+        movement_bonus = len(path) * 0.5
+        
+        # Fitness final
+        fitness = exploration_bonus + movement_bonus - distance_penalty
+        
+        # Evitar fitness negativo (mínimo 0.1 para cromossomos que exploram mas não acham S)
+        fitness = max(0.1, fitness)
         
         return fitness, (linha, coluna), path
     
