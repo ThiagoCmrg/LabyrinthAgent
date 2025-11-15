@@ -37,6 +37,7 @@ class GeneticAlgorithm:
             'MODO_LENTO': False,     # Modo lento para visualização humana
             'DELAY_GERACAO': 0.5,    # Segundos de delay entre gerações (se MODO_LENTO=True)
             'PAUSAR_A_CADA': 0,      # Pausar e esperar Enter a cada N gerações (0=desabilitado)
+            'ANALISE_CONVERGENCIA': False,  # Exibir métricas de convergência
         }
         
         if params:
@@ -44,6 +45,8 @@ class GeneticAlgorithm:
         
         self.params = default_params
         self.best_fitness_history = []
+        self.avg_fitness_history = []
+        self.diversity_history = []
         self.generation_found = None
         self.s_position = None
     
@@ -152,6 +155,63 @@ class GeneticAlgorithm:
         
         return mutated
     
+    def calculate_diversity(self, population):
+        """
+        Calcula a diversidade genética da população.
+        
+        Returns:
+            float: diversidade (0-1, onde 1 = máxima diversidade)
+        """
+        if len(population) < 2:
+            return 0.0
+        
+        # Amostrar alguns cromossomos para eficiência
+        sample_size = min(20, len(population))
+        sample = random.sample(population, sample_size)
+        
+        # Calcular diferenças médias entre cromossomos
+        total_diff = 0
+        comparisons = 0
+        
+        for i in range(len(sample)):
+            for j in range(i + 1, len(sample)):
+                # Contar genes diferentes
+                diff = sum(1 for k in range(len(sample[i])) if sample[i][k] != sample[j][k])
+                total_diff += diff
+                comparisons += 1
+        
+        if comparisons == 0:
+            return 0.0
+        
+        # Normalizar pela diversidade máxima possível
+        avg_diff = total_diff / comparisons
+        max_diff = len(population[0])  # Tamanho do cromossomo
+        
+        return avg_diff / max_diff if max_diff > 0 else 0.0
+    
+    def detect_convergence(self, fitness_history, window=20):
+        """
+        Detecta convergência prematura analisando histórico de fitness.
+        
+        Returns:
+            bool: True se convergiu prematuramente
+        """
+        if len(fitness_history) < window:
+            return False
+        
+        recent = fitness_history[-window:]
+        
+        # Se o fitness não mudou nas últimas 'window' gerações
+        if len(set(recent)) == 1:
+            return True
+        
+        # Se a variação é muito pequena
+        variation = max(recent) - min(recent)
+        if variation < 0.01:
+            return True
+        
+        return False
+    
     def run(self):
         """
         Executa o algoritmo genético.
@@ -203,7 +263,13 @@ class GeneticAlgorithm:
                 best_ever_position = best_position
                 best_ever_path = best_path
             
+            # Calcular métricas
+            avg_fitness = sum(fitnesses) / len(fitnesses)
+            diversity = self.calculate_diversity(population)
+            
             self.best_fitness_history.append(best_ever_fitness)
+            self.avg_fitness_history.append(avg_fitness)
+            self.diversity_history.append(diversity)
             
             # Verificar se encontrou a solução
             if best_fitness >= 1000000.0:
@@ -225,7 +291,10 @@ class GeneticAlgorithm:
                     's_position': best_position,
                     'chromosome': best_ever_chromosome,
                     'path': best_ever_path,
-                    'fitness': best_ever_fitness
+                    'fitness': best_ever_fitness,
+                    'best_fitness_history': self.best_fitness_history,
+                    'avg_fitness_history': self.avg_fitness_history,
+                    'diversity_history': self.diversity_history
                 }
             
             # Log de progresso
@@ -239,11 +308,24 @@ class GeneticAlgorithm:
                 
                 if self.params.get('VERBOSE_DETAIL', False):
                     # Estatísticas da população
-                    avg_fitness = sum(fitnesses) / len(fitnesses)
                     valid_paths = sum(1 for f in fitnesses if f > 0)
                     print(f"  Fitness Médio: {avg_fitness:.2f}")
                     print(f"  Caminhos Válidos: {valid_paths}/{len(fitnesses)}")
                     print(f"  Tamanho do Caminho: {len(best_path)} passos")
+                    
+                    # Análise de convergência
+                    if self.params.get('ANALISE_CONVERGENCIA', False):
+                        print(f"  Diversidade Genética: {diversity:.2%}")
+                        
+                        if len(self.best_fitness_history) >= 10:
+                            stagnation = len(self.best_fitness_history) - max((i for i, f in enumerate(self.best_fitness_history) if f != best_ever_fitness), default=0) - 1
+                            print(f"  Gerações Estagnadas: {stagnation}")
+                            
+                            if diversity < 0.1:
+                                print(f"  ALERTA: Baixa diversidade - risco de convergência prematura!")
+                            
+                            if self.detect_convergence(self.best_fitness_history):
+                                print(f"  ALERTA: Convergência detectada!")
                     
                     # Mostrar início do caminho
                     if len(best_path) > 1:
@@ -303,7 +385,10 @@ class GeneticAlgorithm:
             's_position': None,
             'chromosome': best_ever_chromosome,
             'path': best_ever_path,
-            'fitness': best_ever_fitness
+            'fitness': best_ever_fitness,
+            'best_fitness_history': self.best_fitness_history,
+            'avg_fitness_history': self.avg_fitness_history,
+            'diversity_history': self.diversity_history
         }
 
 

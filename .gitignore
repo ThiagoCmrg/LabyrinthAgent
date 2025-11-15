@@ -19,4 +19,4 @@ __pycache__/
 .FUNCAO_FITNESS_DETALHADA.md
 
 # Outputs
-outputs/caso_teste*
+outputs/*.txt

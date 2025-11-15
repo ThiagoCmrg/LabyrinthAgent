@@ -11,7 +11,7 @@ from genetic import run_genetic
 from a_star import a_star
 
 
-def run_simulation(maze_file, mode='fast', verbose_interval=None, pause_every=0, delay=0):
+def run_simulation(maze_file, mode='fast', verbose_interval=None, pause_every=0, delay=0, analyze=False):
     """
     Executa a simulação completa: GA + A*.
     
@@ -21,6 +21,7 @@ def run_simulation(maze_file, mode='fast', verbose_interval=None, pause_every=0,
         verbose_interval: intervalo de gerações para exibir (None = automático)
         pause_every: pausar e esperar Enter a cada N gerações (0 = desabilitado)
         delay: segundos de atraso entre gerações para visualização (0 = sem delay)
+        analyze: ativar análise de convergência (False = desabilitado)
         
     Returns:
         dict: resultados da simulação
@@ -54,10 +55,11 @@ def run_simulation(maze_file, mode='fast', verbose_interval=None, pause_every=0,
     ga_params = {
         'VERBOSE': True,
         'VERBOSE_INTERVAL': verbose_interval,
-        'VERBOSE_DETAIL': mode in ['slow', 'ultra'],
+        'VERBOSE_DETAIL': mode in ['slow', 'ultra'] or analyze,
         'MODO_LENTO': delay > 0,
         'DELAY_GERACAO': delay,
         'PAUSAR_A_CADA': pause_every,
+        'ANALISE_CONVERGENCIA': analyze,
         'NUM_GERACOES': 500,
         'TAMANHO_POPULACAO': 100,
         'TAXA_MUTACAO': 0.01,

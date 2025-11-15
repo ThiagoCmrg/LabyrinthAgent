@@ -13,19 +13,21 @@ def main():
     Ponto de entrada da aplicação via linha de comando.
     
     Uso:
-        python solver.py <arquivo_labirinto.txt> [modo] [--pause N] [--delay S]
+        python solver.py <arquivo_labirinto.txt> [modo] [--pause N] [--delay S] [--analyze]
         
     Args:
         arquivo_labirinto.txt: caminho para o arquivo do labirinto (obrigatório)
         modo: 'fast', 'slow' ou 'ultra' (opcional, padrão: 'fast')
         --pause N: pausar a cada N gerações esperando Enter
         --delay S: adicionar S segundos de delay entre gerações
+        --analyze: ativar análise de convergência (diversidade, estagnação, etc.)
     
     Exemplos:
         python solver.py data/caso_teste_01.txt
         python solver.py data/caso_teste_01.txt slow
         python solver.py data/caso_teste_01.txt ultra --pause 10
         python solver.py data/caso_teste_01.txt slow --delay 0.5
+        python solver.py data/caso_teste_01.txt slow --analyze
     """
     # Verificar argumentos
     if len(sys.argv) < 2:
@@ -37,13 +39,15 @@ def main():
         print("  python solver.py data/caso_teste_01.txt slow")
         print("  python solver.py data/caso_teste_01.txt ultra --pause 10")
         print("  python solver.py data/caso_teste_01.txt slow --delay 0.5")
+        print("  python solver.py data/caso_teste_01.txt slow --analyze")
         print("\nModos disponíveis:")
         print("  fast  - Exibe progresso a cada 10 gerações (padrão)")
         print("  slow  - Exibe progresso detalhado a cada geração")
         print("  ultra - Máximo detalhe + opções de pausa/delay")
         print("\nOpções extras:")
-        print("  --pause N - Pausa a cada N gerações esperando Enter")
-        print("  --delay S - Adiciona S segundos de delay entre gerações")
+        print("  --pause N   - Pausa a cada N gerações esperando Enter")
+        print("  --delay S   - Adiciona S segundos de delay entre gerações")
+        print("  --analyze   - Ativa análise de convergência/overfitting")
         sys.exit(1)
     
     # Obter arquivo
@@ -58,6 +62,7 @@ def main():
     mode = 'fast'
     pause_every = 0
     delay = 0
+    analyze = False
     
     # Processar argumentos
     i = 2
@@ -80,6 +85,9 @@ def main():
                 except ValueError:
                     print(f"AVISO: Valor inválido para --delay: {sys.argv[i + 1]}")
                     i += 2
+            elif arg == '--analyze':
+                analyze = True
+                i += 1
             else:
                 print(f"AVISO: Opção desconhecida: {arg}")
                 i += 1
@@ -93,7 +101,7 @@ def main():
     
     # Executar simulação
     try:
-        results = run_simulation(maze_file, mode, pause_every=pause_every, delay=delay)
+        results = run_simulation(maze_file, mode, pause_every=pause_every, delay=delay, analyze=analyze)
         
         if results is None:
             print("Simulação falhou!")
