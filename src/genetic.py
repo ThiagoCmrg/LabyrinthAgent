@@ -5,6 +5,7 @@ Segunda linha: expor run_genetic(map, params) que retorna cromossomo vencedor ou
 
 import random
 import copy
+import time
 
 
 class GeneticAlgorithm:
@@ -33,6 +34,9 @@ class GeneticAlgorithm:
             'VERBOSE': True,
             'VERBOSE_INTERVAL': 1,  # Mostrar cada geração
             'VERBOSE_DETAIL': True,  # Mostrar detalhes extras
+            'MODO_LENTO': False,     # Modo lento para visualização humana
+            'DELAY_GERACAO': 0.5,    # Segundos de delay entre gerações (se MODO_LENTO=True)
+            'PAUSAR_A_CADA': 0,      # Pausar e esperar Enter a cada N gerações (0=desabilitado)
         }
         
         if params:
@@ -249,6 +253,16 @@ class GeneticAlgorithm:
                         print(f"  Caminho: {path_preview}")
                 
                 print(f"{'─'*60}")
+                
+                # Modo lento: adicionar delay entre gerações
+                if self.params.get('MODO_LENTO', False):
+                    delay = self.params.get('DELAY_GERACAO', 0.5)
+                    time.sleep(delay)
+                
+                # Pausa interativa: esperar Enter do usuário
+                pausar_a_cada = self.params.get('PAUSAR_A_CADA', 0)
+                if pausar_a_cada > 0 and generation > 0 and generation % pausar_a_cada == 0:
+                    input(f"\n[PAUSA] Pressione Enter para continuar (próximas {pausar_a_cada} gerações)...")
             
             # Criar nova população
             new_population = []

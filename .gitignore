@@ -12,3 +12,11 @@ __pycache__/
 
 # Mac
 .DS_Store
+
+.solucao.txt
+.SPECIFICATION.md
+.GUIA_VERBOSIDADE.md
+.FUNCAO_FITNESS_DETALHADA.md
+
+# Outputs
+outputs/caso_teste*

@@ -1,5 +1,5 @@
 # **Especificação do Projeto: Agente em Labirinto com Algoritmos de Busca**
-
+* NÃO UTILIZAR EMOJIS!
 ## **1\. Objetivo**
 
 Fixar e exercitar conceitos de agentes e algoritmos de busca. O trabalho consiste na simulação de um jogo, no qual um agente deve encontrar a saída de um labirinto.

@@ -5,121 +5,108 @@ Segunda linha: parse args e chama simulator; implementar depois.
 
 import sys
 import os
-
-# Adicionar o diretório src ao path para importações
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from parser import parse_maze_file
-from maze import Maze
-from genetic import run_genetic
-from a_star import a_star
-from visual import print_maze_with_path, print_comparison, save_results_to_file
+from simulator import run_simulation
 
 
 def main():
     """
-    Função principal da CLI.
+    Ponto de entrada da aplicação via linha de comando.
+    
+    Uso:
+        python solver.py <arquivo_labirinto.txt> [modo] [--pause N] [--delay S]
+        
+    Args:
+        arquivo_labirinto.txt: caminho para o arquivo do labirinto (obrigatório)
+        modo: 'fast', 'slow' ou 'ultra' (opcional, padrão: 'fast')
+        --pause N: pausar a cada N gerações esperando Enter
+        --delay S: adicionar S segundos de delay entre gerações
+    
+    Exemplos:
+        python solver.py data/caso_teste_01.txt
+        python solver.py data/caso_teste_01.txt slow
+        python solver.py data/caso_teste_01.txt ultra --pause 10
+        python solver.py data/caso_teste_01.txt slow --delay 0.5
     """
     # Verificar argumentos
     if len(sys.argv) < 2:
-        print("Uso: python cli.py <arquivo_labirinto.txt>")
-        print("Exemplo: python cli.py ../data/caso_teste_01.txt")
+        print("ERRO: Arquivo de labirinto não fornecido!")
+        print("\nUso:")
+        print("  python solver.py <arquivo_labirinto.txt> [modo] [--pause N] [--delay S]")
+        print("\nExemplo:")
+        print("  python solver.py data/caso_teste_01.txt")
+        print("  python solver.py data/caso_teste_01.txt slow")
+        print("  python solver.py data/caso_teste_01.txt ultra --pause 10")
+        print("  python solver.py data/caso_teste_01.txt slow --delay 0.5")
+        print("\nModos disponíveis:")
+        print("  fast  - Exibe progresso a cada 10 gerações (padrão)")
+        print("  slow  - Exibe progresso detalhado a cada geração")
+        print("  ultra - Máximo detalhe + opções de pausa/delay")
+        print("\nOpções extras:")
+        print("  --pause N - Pausa a cada N gerações esperando Enter")
+        print("  --delay S - Adiciona S segundos de delay entre gerações")
         sys.exit(1)
     
+    # Obter arquivo
     maze_file = sys.argv[1]
     
-    # Verificar se o arquivo existe
+    # Verificar se arquivo existe
     if not os.path.exists(maze_file):
-        print(f"ERRO: Arquivo '{maze_file}' não encontrado.")
+        print(f"ERRO: Arquivo '{maze_file}' não encontrado!")
         sys.exit(1)
     
-    print("\n" + "="*70)
-    print("RESOLVEDOR DE LABIRINTO - Algoritmo Genético + A*")
-    print("="*70)
+    # Obter modo (padrão: fast)
+    mode = 'fast'
+    pause_every = 0
+    delay = 0
     
-    # FASE 0: Carregar o labirinto
-    print("\n[FASE 0] Carregando labirinto...")
-    try:
-        n, grid, pos_E, pos_S = parse_maze_file(maze_file)
-        maze = Maze(n, grid, pos_E, pos_S)
-        print(f"Labirinto carregado: {n}x{n}")
-        print(f"  Entrada (E): {pos_E}")
-        print(f"  Saída (S): {pos_S}")
-    except Exception as e:
-        print(f"ERRO ao carregar labirinto: {e}")
-        sys.exit(1)
-    
-    # FASE 1: Algoritmo Genético
-    print("\n" + "="*70)
-    print("[FASE 1] ALGORITMO GENÉTICO - Descobrindo a saída")
-    print("="*70)
-    print("Iniciando busca pela saída...\n")
-    
-    # Parâmetros do GA (podem ser ajustados)
-    ga_params = {
-        'TAMANHO_POPULACAO': 100,
-        'TAXA_MUTACAO': 0.01,
-        'TAXA_CROSSOVER': 0.8,
-        'NUM_GERACOES': 500,
-        'TAMANHO_CROMOSSOMO': max(50, (n * n) // 2),
-        'TORNEIO_SIZE': 3,
-        'VERBOSE': True,
-        'VERBOSE_INTERVAL': 5,  # Mostrar a cada 5 gerações para acompanhar melhor
-        'VERBOSE_DETAIL': True,  # Mostrar detalhes extras
-    }
-    
-    ga_result = run_genetic(maze, ga_params)
-    
-    if not ga_result['success']:
-        print("\nERRO: O Algoritmo Genético não conseguiu encontrar a saída.")
-        print("Tente ajustar os parâmetros ou aumentar o número de gerações.")
+    # Processar argumentos
+    i = 2
+    while i < len(sys.argv):
+        arg = sys.argv[i]
         
-        # Mesmo sem sucesso, salvar o que foi encontrado
-        save_results_to_file(maze, ga_result, None, "solucao.txt")
+        if arg.startswith('--'):
+            # Opções extras
+            if arg == '--pause' and i + 1 < len(sys.argv):
+                try:
+                    pause_every = int(sys.argv[i + 1])
+                    i += 2
+                except ValueError:
+                    print(f"AVISO: Valor inválido para --pause: {sys.argv[i + 1]}")
+                    i += 2
+            elif arg == '--delay' and i + 1 < len(sys.argv):
+                try:
+                    delay = float(sys.argv[i + 1])
+                    i += 2
+                except ValueError:
+                    print(f"AVISO: Valor inválido para --delay: {sys.argv[i + 1]}")
+                    i += 2
+            else:
+                print(f"AVISO: Opção desconhecida: {arg}")
+                i += 1
+        else:
+            # Modo
+            mode = arg.lower()
+            if mode not in ['fast', 'slow', 'ultra']:
+                print(f"AVISO: Modo '{mode}' não reconhecido. Usando 'fast'.")
+                mode = 'fast'
+            i += 1
+    
+    # Executar simulação
+    try:
+        results = run_simulation(maze_file, mode, pause_every=pause_every, delay=delay)
+        
+        if results is None:
+            print("Simulação falhou!")
+            sys.exit(1)
+        
+        sys.exit(0)
+        
+    except Exception as e:
+        print(f"\nERRO durante a execução:")
+        print(f"   {str(e)}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
-    
-    # Mostrar caminho do GA
-    print(f"\nCaminho encontrado pelo GA: {len(ga_result['path'])} passos")
-    print_maze_with_path(maze, ga_result['path'], "Caminho do Algoritmo Genético")
-    
-    # FASE 2: Algoritmo A*
-    print("\n" + "="*70)
-    print("[FASE 2] ALGORITMO A* - Encontrando caminho ótimo")
-    print("="*70)
-    print(f"\nBuscando caminho ótimo:")
-    print(f"   Origem: {pos_E}")
-    print(f"   Destino: {ga_result['s_position']}")
-    print(f"\nExecutando A*...\n")
-    
-    astar_path = a_star(maze, pos_E, ga_result['s_position'])
-    
-    if astar_path is None:
-        print("\nERRO: O A* não conseguiu encontrar um caminho.")
-        save_results_to_file(maze, ga_result, None, "solucao.txt")
-        sys.exit(1)
-    
-    print(f"{'═'*70}")
-    print(f"CAMINHO ÓTIMO ENCONTRADO!")
-    print(f"{'═'*70}")
-    print(f"   • Número de passos: {len(astar_path)}")
-    print(f"   • Início: {astar_path[0]}")
-    print(f"   • Fim: {astar_path[-1]}")
-    print(f"{'═'*70}\n")
-    
-    print_maze_with_path(maze, astar_path, "Caminho do A* (Ótimo)")
-    
-    # Comparação
-    print_comparison(ga_result['path'], astar_path)
-    
-    # Salvar resultados
-    print("\n" + "="*70)
-    print("Salvando resultados...")
-    print("="*70)
-    save_results_to_file(maze, ga_result, astar_path, "solucao.txt")
-    
-    print("\n" + "="*70)
-    print("RESOLUÇÃO CONCLUÍDA COM SUCESSO!")
-    print("="*70 + "\n")
 
 
 if __name__ == "__main__":
