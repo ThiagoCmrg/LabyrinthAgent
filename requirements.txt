@@ -1,3 +1,4 @@
-# Add runtime dependencies here, e.g.:
-# numpy
-# pytest
+# Este projeto usa apenas bibliotecas padrão do Python
+# Não são necessárias dependências externas
+
+# Python 3.x é suficiente para executar o projeto
