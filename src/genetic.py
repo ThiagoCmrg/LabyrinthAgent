@@ -28,7 +28,7 @@ class GeneticAlgorithm:
             'TAMANHO_POPULACAO': 100,
             'TAXA_MUTACAO': 0.01,
             'TAXA_CROSSOVER': 0.8,
-            'NUM_GERACOES': 500,
+            'NUM_GERACOES': 10,  # Suficiente para matrizes 10x10
             'TAMANHO_CROMOSSOMO': max(50, (maze.n * maze.n) // 2),
             'TORNEIO_SIZE': 3,
             'VERBOSE': True,
@@ -38,6 +38,11 @@ class GeneticAlgorithm:
             'DELAY_GERACAO': 0.5,    # Segundos de delay entre gerações (se MODO_LENTO=True)
             'PAUSAR_A_CADA': 0,      # Pausar e esperar Enter a cada N gerações (0=desabilitado)
             'ANALISE_CONVERGENCIA': False,  # Exibir métricas de convergência
+            'SHOW_ELITISM': False,   # Mostrar elitismo no CLI
+            'TRACK_HISTORY': False,  # Rastrear histórico completo de gerações
+            'TRACK_FULL_POPULATION': False,  # Rastrear todos os indivíduos
+            'SHOW_POPULATION': 0,    # Quantos indivíduos mostrar no CLI (0=nenhum)
+            'TRACK_PHASES': False,   # Rastrear fases detalhadas do AG (para output)
         }
         
         if params:
@@ -49,6 +54,8 @@ class GeneticAlgorithm:
         self.diversity_history = []
         self.generation_found = None
         self.s_position = None
+        self.generation_details = []  # Histórico completo de cada geração
+        self.phase_logs = []  # Logs detalhados de cada fase do AG
     
     def create_random_chromosome(self):
         """
@@ -85,7 +92,10 @@ class GeneticAlgorithm:
             # Verificar se encontrou a saída
             if self.maze.get_cell(linha, coluna) == 'S':
                 # SOLUÇÃO ENCONTRADA!
-                return 1000000.0, (linha, coluna), path
+                # Fitness Híbrido: Base alta + bônus por eficiência
+                BASE_SUCCESS = 10000.0  # Garante ser melhor que qualquer fitness heurístico
+                efficiency_bonus = 1000.0 / len(path)  # Premia caminhos curtos
+                return BASE_SUCCESS + efficiency_bonus, (linha, coluna), path
         
         # Caminho válido mas não encontrou S
         # Fitness baseado em:
@@ -235,9 +245,21 @@ class GeneticAlgorithm:
             print(f"   Partindo de E = {self.maze.pos_E}")
             print(f"{'═'*60}\n")
         
-        # Criar população inicial
+        # FASE 0: Criar população inicial
         population = [self.create_random_chromosome() 
                       for _ in range(self.params['TAMANHO_POPULACAO'])]
+        
+        if self.params.get('TRACK_PHASES', False):
+            self.phase_logs.append({
+                'generation': 0,
+                'phase': 'INICIALIZAÇÃO',
+                'description': 'População inicial criada aleatoriamente',
+                'details': {
+                    'population_size': len(population),
+                    'chromosome_length': self.params['TAMANHO_CROMOSSOMO'],
+                    'method': 'Geração aleatória de movimentos (0-7)'
+                }
+            })
         
         best_ever_chromosome = None
         best_ever_fitness = 0
@@ -245,23 +267,67 @@ class GeneticAlgorithm:
         best_ever_path = None
         
         for generation in range(self.params['NUM_GERACOES']):
-            # Avaliar fitness de toda a população
+            # FASE 1: Avaliar fitness de toda a população
             fitness_results = [self.evaluate_fitness(chromo) for chromo in population]
             fitnesses = [f[0] for f in fitness_results]
             
-            # Encontrar o melhor desta geração
+            if self.params.get('TRACK_PHASES', False):
+                self.phase_logs.append({
+                    'generation': generation,
+                    'phase': 'AVALIAÇÃO DE FITNESS',
+                    'description': 'Cada cromossomo é avaliado (simulação no labirinto)',
+                    'details': {
+                        'total_evaluations': len(fitnesses),
+                        'best_fitness': max(fitnesses),
+                        'avg_fitness': sum(fitnesses) / len(fitnesses),
+                        'worst_fitness': min(fitnesses),
+                        'valid_paths': sum(1 for f in fitnesses if f > 0)
+                    }
+                })
+            
+            # FASE 2: Encontrar o melhor desta geração
             best_idx = fitnesses.index(max(fitnesses))
             best_fitness = fitnesses[best_idx]
             best_chromosome = population[best_idx]
             best_position = fitness_results[best_idx][1]
             best_path = fitness_results[best_idx][2]
             
-            # Atualizar melhor global
+            if self.params.get('TRACK_PHASES', False):
+                self.phase_logs.append({
+                    'generation': generation,
+                    'phase': 'IDENTIFICAÇÃO DO MELHOR',
+                    'description': 'Melhor indivíduo da geração identificado',
+                    'details': {
+                        'best_individual_id': best_idx,
+                        'fitness': best_fitness,
+                        'position': best_position,
+                        'path_length': len(best_path),
+                        'found_exit': best_fitness >= 10000.0
+                    }
+                })
+            
+            # FASE 3: Atualizar melhor global (Elitismo)
+            elite_preserved = False
             if best_fitness > best_ever_fitness:
                 best_ever_fitness = best_fitness
                 best_ever_chromosome = copy.deepcopy(best_chromosome)
                 best_ever_position = best_position
                 best_ever_path = best_path
+                elite_preserved = False  # Novo melhor encontrado
+            else:
+                elite_preserved = True  # Elite anterior preservado
+            
+            if self.params.get('TRACK_PHASES', False):
+                self.phase_logs.append({
+                    'generation': generation,
+                    'phase': 'ELITISMO',
+                    'description': 'Melhor indivíduo global é preservado para próxima geração',
+                    'details': {
+                        'elite_fitness': best_ever_fitness,
+                        'status': 'Preservado da geração anterior' if elite_preserved else 'Novo melhor encontrado',
+                        'elite_will_survive': True
+                    }
+                })
             
             # Calcular métricas
             avg_fitness = sum(fitnesses) / len(fitnesses)
@@ -271,8 +337,44 @@ class GeneticAlgorithm:
             self.avg_fitness_history.append(avg_fitness)
             self.diversity_history.append(diversity)
             
+            # Rastrear histórico completo se solicitado
+            if self.params.get('TRACK_HISTORY', False):
+                valid_paths = sum(1 for f in fitnesses if f > 0)
+                min_fitness = min(fitnesses)
+                max_fitness = max(fitnesses)
+                
+                generation_data = {
+                    'generation': generation,
+                    'best_fitness_generation': best_fitness,
+                    'best_fitness_global': best_ever_fitness,
+                    'avg_fitness': avg_fitness,
+                    'min_fitness': min_fitness,
+                    'max_fitness': max_fitness,
+                    'diversity': diversity,
+                    'valid_paths': valid_paths,
+                    'total_population': len(population),
+                    'best_position': best_position,
+                    'path_length': len(best_path)
+                }
+                
+                # Rastrear população completa se solicitado
+                if self.params.get('TRACK_FULL_POPULATION', False):
+                    population_data = []
+                    for i, (chromo, (fit, pos, path)) in enumerate(zip(population, fitness_results)):
+                        population_data.append({
+                            'id': i,
+                            'fitness': fit,
+                            'position': pos,
+                            'path_length': len(path),
+                            'unique_cells': len(set(path))
+                        })
+                    generation_data['population'] = population_data
+                
+                self.generation_details.append(generation_data)
+            
             # Verificar se encontrou a solução
-            if best_fitness >= 1000000.0:
+            # Fitness >= 10000.0 indica que a saída foi encontrada
+            if best_fitness >= 10000.0:
                 self.generation_found = generation
                 self.s_position = best_position
                 
@@ -294,7 +396,9 @@ class GeneticAlgorithm:
                     'fitness': best_ever_fitness,
                     'best_fitness_history': self.best_fitness_history,
                     'avg_fitness_history': self.avg_fitness_history,
-                    'diversity_history': self.diversity_history
+                    'diversity_history': self.diversity_history,
+                    'generation_details': self.generation_details,
+                    'phase_logs': self.phase_logs
                 }
             
             # Log de progresso
@@ -305,6 +409,30 @@ class GeneticAlgorithm:
                 print(f"  Melhor Fitness da Geração: {best_fitness:.2f}")
                 print(f"  Melhor Fitness Global: {best_ever_fitness:.2f}")
                 print(f"  Posição Final: {best_position}")
+                
+                # Visualização de elitismo
+                if self.params.get('SHOW_ELITISM', False):
+                    if generation > 0:
+                        status = "[ELITE PRESERVADO]" if best_ever_fitness == self.best_fitness_history[-2] else "[NOVO MELHOR]"
+                        print(f"  Elitismo: {status}")
+                
+                # Mostrar população completa ou top N
+                show_pop = self.params.get('SHOW_POPULATION', 0)
+                if show_pop > 0:
+                    print(f"\n  Top {show_pop} Indivíduos desta Geração:")
+                    print(f"  {'ID':<5} {'Fitness':<15} {'Posição Final':<20} {'Passos':<8} {'Células Únicas':<15}")
+                    print(f"  {'-'*70}")
+                    
+                    # Ordenar por fitness (melhor primeiro)
+                    sorted_pop = sorted(enumerate(fitness_results), key=lambda x: x[1][0], reverse=True)
+                    
+                    for rank, (idx, (fit, pos, path)) in enumerate(sorted_pop[:show_pop], 1):
+                        unique_cells = len(set(path))
+                        status = "★ " if rank == 1 else "  "
+                        print(f"  {status}{idx:<3} {fit:<15.2f} {str(pos):<20} {len(path):<8} {unique_cells:<15}")
+                    
+                    if show_pop < len(population):
+                        print(f"  ... e mais {len(population) - show_pop} indivíduos")
                 
                 if self.params.get('VERBOSE_DETAIL', False):
                     # Estatísticas da população
@@ -346,7 +474,7 @@ class GeneticAlgorithm:
                 if pausar_a_cada > 0 and generation > 0 and generation % pausar_a_cada == 0:
                     input(f"\n[PAUSA] Pressione Enter para continuar (próximas {pausar_a_cada} gerações)...")
             
-            # Criar nova população
+            # FASE 4: Criar nova população
             new_population = []
             
             # Elitismo: manter o melhor (se existir)
@@ -355,22 +483,85 @@ class GeneticAlgorithm:
             else:
                 new_population.append(copy.deepcopy(best_chromosome))
             
+            # Contadores para estatísticas
+            selections_count = 0
+            crossovers_count = 0
+            mutations_count = 0
+            genes_mutated = 0
+            
             # Gerar o resto da população
             while len(new_population) < self.params['TAMANHO_POPULACAO']:
-                # Seleção
+                # FASE 5: Seleção por Torneio
                 parent1 = self.tournament_selection(population, fitnesses)
                 parent2 = self.tournament_selection(population, fitnesses)
+                selections_count += 2
                 
-                # Crossover
+                # FASE 6: Crossover
                 child1, child2 = self.crossover(parent1, parent2)
+                crossovers_count += 1
                 
-                # Mutação
+                # FASE 7: Mutação
+                child1_original = copy.deepcopy(child1)
+                child2_original = copy.deepcopy(child2)
                 child1 = self.mutate(child1)
                 child2 = self.mutate(child2)
+                
+                # Contar genes mutados
+                genes_mutated += sum(1 for i in range(len(child1)) if child1[i] != child1_original[i])
+                genes_mutated += sum(1 for i in range(len(child2)) if child2[i] != child2_original[i])
+                mutations_count += 2
                 
                 new_population.append(child1)
                 if len(new_population) < self.params['TAMANHO_POPULACAO']:
                     new_population.append(child2)
+            
+            if self.params.get('TRACK_PHASES', False):
+                self.phase_logs.append({
+                    'generation': generation,
+                    'phase': 'SELEÇÃO POR TORNEIO',
+                    'description': f'Pais selecionados via torneio (tamanho {self.params["TORNEIO_SIZE"]})',
+                    'details': {
+                        'total_selections': selections_count,
+                        'tournament_size': self.params['TORNEIO_SIZE'],
+                        'method': 'Seleciona melhor de K indivíduos aleatórios'
+                    }
+                })
+                
+                self.phase_logs.append({
+                    'generation': generation,
+                    'phase': 'CROSSOVER (RECOMBINAÇÃO)',
+                    'description': 'Pais combinados para gerar filhos (crossover de um ponto)',
+                    'details': {
+                        'total_crossovers': crossovers_count,
+                        'rate': self.params['TAXA_CROSSOVER'] * 100,
+                        'method': 'One-point crossover',
+                        'preserves_sequences': True
+                    }
+                })
+                
+                self.phase_logs.append({
+                    'generation': generation,
+                    'phase': 'MUTAÇÃO',
+                    'description': 'Genes alterados aleatoriamente para manter diversidade',
+                    'details': {
+                        'individuals_processed': mutations_count,
+                        'genes_mutated': genes_mutated,
+                        'mutation_rate': self.params['TAXA_MUTACAO'] * 100,
+                        'expected_mutations_per_chromosome': self.params['TAMANHO_CROMOSSOMO'] * self.params['TAXA_MUTACAO'],
+                        'avg_mutations_per_individual': genes_mutated / mutations_count if mutations_count > 0 else 0
+                    }
+                })
+                
+                self.phase_logs.append({
+                    'generation': generation,
+                    'phase': 'NOVA GERAÇÃO FORMADA',
+                    'description': 'Nova população completa (elite + filhos)',
+                    'details': {
+                        'population_size': len(new_population),
+                        'elite_count': 1,
+                        'offspring_count': len(new_population) - 1
+                    }
+                })
             
             population = new_population
         
@@ -388,7 +579,9 @@ class GeneticAlgorithm:
             'fitness': best_ever_fitness,
             'best_fitness_history': self.best_fitness_history,
             'avg_fitness_history': self.avg_fitness_history,
-            'diversity_history': self.diversity_history
+            'diversity_history': self.diversity_history,
+            'generation_details': self.generation_details,
+            'phase_logs': self.phase_logs
         }
 
 

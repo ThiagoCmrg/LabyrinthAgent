@@ -13,7 +13,7 @@ def main():
     Ponto de entrada da aplicação via linha de comando.
     
     Uso:
-        python solver.py <arquivo_labirinto.txt> [modo] [--pause N] [--delay S] [--analyze]
+        python solver.py <arquivo_labirinto.txt> [modo] [--pause N] [--delay S] [--analyze] [--elitism] [--population N]
         
     Args:
         arquivo_labirinto.txt: caminho para o arquivo do labirinto (obrigatório)
@@ -21,13 +21,15 @@ def main():
         --pause N: pausar a cada N gerações esperando Enter
         --delay S: adicionar S segundos de delay entre gerações
         --analyze: ativar análise de convergência (diversidade, estagnação, etc.)
+        --elitism: mostrar status de elitismo no CLI (preservação do melhor)
+        --population N: mostrar top N indivíduos por geração (use -1 para todos os 100)
     
     Exemplos:
         python solver.py data/caso_teste_01.txt
         python solver.py data/caso_teste_01.txt slow
-        python solver.py data/caso_teste_01.txt ultra --pause 10
-        python solver.py data/caso_teste_01.txt slow --delay 0.5
-        python solver.py data/caso_teste_01.txt slow --analyze
+        python solver.py data/caso_teste_01.txt slow --population 10
+        python solver.py data/caso_teste_01.txt slow --population -1
+        python solver.py data/caso_teste_01.txt slow --elitism --population 5
     """
     # Verificar argumentos
     if len(sys.argv) < 2:
@@ -40,14 +42,20 @@ def main():
         print("  python solver.py data/caso_teste_01.txt ultra --pause 10")
         print("  python solver.py data/caso_teste_01.txt slow --delay 0.5")
         print("  python solver.py data/caso_teste_01.txt slow --analyze")
+        print("  python solver.py data/caso_teste_01.txt fast --elitism")
+        print("  python solver.py data/caso_teste_01.txt slow --population 10")
+        print("  python solver.py data/caso_teste_01.txt slow --population -1")
         print("\nModos disponíveis:")
         print("  fast  - Exibe progresso a cada 10 gerações (padrão)")
         print("  slow  - Exibe progresso detalhado a cada geração")
         print("  ultra - Máximo detalhe + opções de pausa/delay")
         print("\nOpções extras:")
-        print("  --pause N   - Pausa a cada N gerações esperando Enter")
-        print("  --delay S   - Adiciona S segundos de delay entre gerações")
-        print("  --analyze   - Ativa análise de convergência/overfitting")
+        print("  --pause N       - Pausa a cada N gerações esperando Enter")
+        print("  --delay S       - Adiciona S segundos de delay entre gerações")
+        print("  --analyze       - Ativa análise de convergência/overfitting")
+        print("  --elitism       - Mostra status de elitismo no CLI")
+        print("  --population N  - Mostra top N indivíduos por geração")
+        print("                    (use 10 para top 10, -1 para todos os 100)")
         sys.exit(1)
     
     # Obter arquivo
@@ -63,6 +71,8 @@ def main():
     pause_every = 0
     delay = 0
     analyze = False
+    show_elitism = False
+    show_population = 0
     
     # Processar argumentos
     i = 2
@@ -85,8 +95,18 @@ def main():
                 except ValueError:
                     print(f"AVISO: Valor inválido para --delay: {sys.argv[i + 1]}")
                     i += 2
+            elif arg == '--population' and i + 1 < len(sys.argv):
+                try:
+                    show_population = int(sys.argv[i + 1])
+                    i += 2
+                except ValueError:
+                    print(f"AVISO: Valor inválido para --population: {sys.argv[i + 1]}")
+                    i += 2
             elif arg == '--analyze':
                 analyze = True
+                i += 1
+            elif arg == '--elitism':
+                show_elitism = True
                 i += 1
             else:
                 print(f"AVISO: Opção desconhecida: {arg}")
@@ -101,7 +121,8 @@ def main():
     
     # Executar simulação
     try:
-        results = run_simulation(maze_file, mode, pause_every=pause_every, delay=delay, analyze=analyze)
+        results = run_simulation(maze_file, mode, pause_every=pause_every, delay=delay, 
+                                analyze=analyze, show_elitism=show_elitism, show_population=show_population)
         
         if results is None:
             print("Simulação falhou!")
