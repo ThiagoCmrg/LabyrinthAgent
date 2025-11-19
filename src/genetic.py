@@ -4,8 +4,6 @@ import time
 
 
 class GeneticAlgorithm:
-    # Algoritmo Genético para descobrir saída do labirinto
-    
     def __init__(self, maze, params=None):
         # Inicializa GA com parâmetros padrão
         self.maze = maze
@@ -67,10 +65,6 @@ class GeneticAlgorithm:
                 BASE_SUCCESS = 10000.0
                 efficiency_bonus = 1000.0 / len(path)
                 return BASE_SUCCESS + efficiency_bonus, (linha, coluna), path
-        # Fitness baseado em:
-        # 1. Distância da entrada (incentiva exploração)
-        # 2. Número de células únicas visitadas (premia diversidade)
-        # 3. Proximidade à saída (bônus se chegar perto)
         
         linha_entrada, coluna_entrada = self.maze.pos_E
         linha_saida, coluna_saida = self.maze.pos_S
