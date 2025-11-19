@@ -1,30 +1,21 @@
-"""output_formatter.py
-Formatadores e helpers para geração de arquivos de saída.
-Aplica princípios de Clean Code: funções pequenas, responsabilidade única.
-"""
-
 def write_section(f, title, char='=', width=80):
-    """Escreve uma seção com título e separadores."""
     f.write(char * width + "\n")
     f.write(f"{title}\n")
     f.write(char * width + "\n\n")
 
 
 def write_subsection(f, title, width=80):
-    """Escreve uma subseção com separador."""
     f.write(f"{title}\n")
     f.write("-" * width + "\n")
 
 
 def write_parameters(f, params):
-    """Escreve lista de parâmetros formatada."""
     for key, value in params.items():
         f.write(f"  {key}: {value}\n")
     f.write("\n")
 
 
 def format_detail_value(key, value):
-    """Formata um valor de detalhe baseado no tipo e nome."""
     key_display = key.replace('_', ' ').title()
     
     if isinstance(value, float):
@@ -40,8 +31,7 @@ def format_detail_value(key, value):
         return f"{key_display}: {value}"
 
 
-def write_phase_details(f, details, indent="         • "):
-    """Escreve detalhes de uma fase com formatação apropriada."""
+def write_phase_details(f, details, indent="         - "):
     if not details:
         return
     
@@ -52,7 +42,6 @@ def write_phase_details(f, details, indent="         • "):
 
 
 def write_phase_log(f, phase):
-    """Escreve log de uma fase do AG."""
     f.write(f"[FASE] {phase['phase']}\n")
     f.write(f"       {phase['description']}\n")
     write_phase_details(f, phase.get('details', {}))
@@ -60,14 +49,12 @@ def write_phase_log(f, phase):
 
 
 def write_generation_header(f, generation, width=80):
-    """Escreve cabeçalho de geração."""
-    f.write(f"\n{'─' * width}\n")
-    f.write(f"GERAÇÃO {generation}\n")
-    f.write(f"{'─' * width}\n\n")
+    f.write(f"\n{'-' * width}\n")
+    f.write(f"GERACAO {generation}\n")
+    f.write(f"{'-' * width}\n\n")
 
 
 def write_table_row(f, row_data, column_formats):
-    """Escreve uma linha de tabela formatada."""
     formatted_values = []
     for value, fmt in zip(row_data, column_formats):
         if isinstance(fmt, str):  # É uma especificação de formato como "<6"
@@ -83,17 +70,12 @@ def write_table_row(f, row_data, column_formats):
 
 
 def write_success_banner(f, message, width=80):
-    """Escreve banner de sucesso."""
     f.write("\n" + "*" * width + "\n")
     f.write(f">>> {message} <<<\n")
     f.write("*" * width + "\n")
 
 
 def format_path(path, max_per_line=8):
-    """
-    Formata um caminho em formato legível.
-    Agrupa posições em linhas se muito longo.
-    """
     if not path:
         return "(vazio)"
     
@@ -102,7 +84,6 @@ def format_path(path, max_per_line=8):
 
 
 def write_ga_parameters(f, chromosome_length):
-    """Escreve parâmetros do AG de forma concisa."""
     params = {
         "Tamanho da População": 100,
         "Taxa de Mutação": "1.0%",
@@ -116,7 +97,6 @@ def write_ga_parameters(f, chromosome_length):
 
 
 def write_astar_config(f):
-    """Escreve configuração do A* de forma concisa."""
     config = {
         "Heurística": "Octile (admissível para 8 direções)",
         "Custo ortogonal": "1.0",

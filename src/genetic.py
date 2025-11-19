@@ -1,48 +1,34 @@
-"""genetic.py
-Breve: Implementa o ciclo do Algoritmo Genético (população, seleção, crossover, mutação).
-Segunda linha: expor run_genetic(map, params) que retorna cromossomo vencedor ou None.
-"""
-
 import random
 import copy
 import time
 
 
 class GeneticAlgorithm:
-    """
-    Implementa o Algoritmo Genético para descobrir a saída do labirinto.
-    """
+    # Algoritmo Genético para descobrir saída do labirinto
     
     def __init__(self, maze, params=None):
-        """
-        Inicializa o GA com parâmetros.
-        
-        Args:
-            maze: objeto Maze
-            params: dicionário com parâmetros do GA
-        """
+        # Inicializa GA com parâmetros padrão
         self.maze = maze
         
-        # Parâmetros padrão
         default_params = {
             'TAMANHO_POPULACAO': 100,
             'TAXA_MUTACAO': 0.01,
             'TAXA_CROSSOVER': 0.8,
-            'NUM_GERACOES': 10,  # Suficiente para matrizes 10x10
+            'NUM_GERACOES': 10,
             'TAMANHO_CROMOSSOMO': max(50, (maze.n * maze.n) // 2),
             'TORNEIO_SIZE': 3,
             'VERBOSE': True,
-            'VERBOSE_INTERVAL': 1,  # Mostrar cada geração
-            'VERBOSE_DETAIL': True,  # Mostrar detalhes extras
-            'MODO_LENTO': False,     # Modo lento para visualização humana
-            'DELAY_GERACAO': 0.5,    # Segundos de delay entre gerações (se MODO_LENTO=True)
-            'PAUSAR_A_CADA': 0,      # Pausar e esperar Enter a cada N gerações (0=desabilitado)
-            'ANALISE_CONVERGENCIA': False,  # Exibir métricas de convergência
-            'SHOW_ELITISM': False,   # Mostrar elitismo no CLI
-            'TRACK_HISTORY': False,  # Rastrear histórico completo de gerações
-            'TRACK_FULL_POPULATION': False,  # Rastrear todos os indivíduos
-            'SHOW_POPULATION': 0,    # Quantos indivíduos mostrar no CLI (0=nenhum)
-            'TRACK_PHASES': False,   # Rastrear fases detalhadas do AG (para output)
+            'VERBOSE_INTERVAL': 1,
+            'VERBOSE_DETAIL': True,
+            'MODO_LENTO': False,
+            'DELAY_GERACAO': 0.5,
+            'PAUSAR_A_CADA': 0,
+            'ANALISE_CONVERGENCIA': False,
+            'SHOW_ELITISM': False,
+            'TRACK_HISTORY': False,
+            'TRACK_FULL_POPULATION': False,
+            'SHOW_POPULATION': 0,
+            'TRACK_PHASES': False,
         }
         
         if params:
@@ -54,50 +40,33 @@ class GeneticAlgorithm:
         self.diversity_history = []
         self.generation_found = None
         self.s_position = None
-        self.generation_details = []  # Histórico completo de cada geração
-        self.phase_logs = []  # Logs detalhados de cada fase do AG
+        self.generation_details = []
+        self.phase_logs = []
     
     def create_random_chromosome(self):
-        """
-        Cria um cromossomo aleatório (sequência de movimentos).
-        """
+        # Cria cromossomo aleatório (sequência de movimentos 0-7)
         return [random.randint(0, 7) for _ in range(self.params['TAMANHO_CROMOSSOMO'])]
     
     def evaluate_fitness(self, chromosome):
-        """
-        Avalia a aptidão de um cromossomo.
-        
-        Returns:
-            tuple: (fitness, final_position, path)
-        """
-        # Iniciar na entrada
+        # Avalia aptidão: retorna (fitness, posição_final, caminho)
         linha, coluna = self.maze.pos_E
         path = [(linha, coluna)]
         visited_cells = {(linha, coluna)}
         
-        # Simular cada movimento
         for direction in chromosome:
             result = self.maze.move(linha, coluna, direction)
             
             if result is None:
-                # Movimento inválido (parede ou fora dos limites)
-                # NÃO retornar imediatamente!
-                # Simplesmente pular este movimento e tentar o próximo
                 continue
             
             linha, coluna = result
             path.append((linha, coluna))
             visited_cells.add((linha, coluna))
             
-            # Verificar se encontrou a saída
             if self.maze.get_cell(linha, coluna) == 'S':
-                # SOLUÇÃO ENCONTRADA!
-                # Fitness Híbrido: Base alta + bônus por eficiência
-                BASE_SUCCESS = 10000.0  # Garante ser melhor que qualquer fitness heurístico
-                efficiency_bonus = 1000.0 / len(path)  # Premia caminhos curtos
+                BASE_SUCCESS = 10000.0
+                efficiency_bonus = 1000.0 / len(path)
                 return BASE_SUCCESS + efficiency_bonus, (linha, coluna), path
-        
-        # Caminho válido mas não encontrou S
         # Fitness baseado em:
         # 1. Distância da entrada (incentiva exploração)
         # 2. Número de células únicas visitadas (premia diversidade)
@@ -127,9 +96,7 @@ class GeneticAlgorithm:
         return fitness, (linha, coluna), path
     
     def tournament_selection(self, population, fitnesses):
-        """
-        Seleção por torneio.
-        """
+        # Seleção por torneio
         tournament_size = self.params['TORNEIO_SIZE']
         tournament = random.sample(list(zip(population, fitnesses)), tournament_size)
         
@@ -137,9 +104,7 @@ class GeneticAlgorithm:
         return max(tournament, key=lambda x: x[1])[0]
     
     def crossover(self, parent1, parent2):
-        """
-        Crossover de um ponto.
-        """
+        # Crossover de um ponto
         if random.random() > self.params['TAXA_CROSSOVER']:
             # Sem crossover, retornar cópias dos pais
             return copy.deepcopy(parent1), copy.deepcopy(parent2)
@@ -154,9 +119,7 @@ class GeneticAlgorithm:
         return child1, child2
     
     def mutate(self, chromosome):
-        """
-        Mutação: altera genes aleatoriamente baseado na taxa de mutação.
-        """
+        # Mutação: altera genes aleatoriamente
         mutated = copy.deepcopy(chromosome)
         
         for i in range(len(mutated)):
@@ -166,12 +129,7 @@ class GeneticAlgorithm:
         return mutated
     
     def calculate_diversity(self, population):
-        """
-        Calcula a diversidade genética da população.
-        
-        Returns:
-            float: diversidade (0-1, onde 1 = máxima diversidade)
-        """
+        # Calcula diversidade genética da população (0-1)
         if len(population) < 2:
             return 0.0
         
@@ -200,12 +158,7 @@ class GeneticAlgorithm:
         return avg_diff / max_diff if max_diff > 0 else 0.0
     
     def detect_convergence(self, fitness_history, window=20):
-        """
-        Detecta convergência prematura analisando histórico de fitness.
-        
-        Returns:
-            bool: True se convergiu prematuramente
-        """
+        # Detecta convergência prematura
         if len(fitness_history) < window:
             return False
         
@@ -223,27 +176,22 @@ class GeneticAlgorithm:
         return False
     
     def run(self):
-        """
-        Executa o algoritmo genético.
-        
-        Returns:
-            dict: resultados incluindo cromossomo vencedor, posição S, caminho, etc.
-        """
+        # Executa o AG até encontrar S ou atingir máximo de gerações
         # Mostrar informações iniciais
         if self.params['VERBOSE']:
-            print(f"\n{'═'*60}")
-            print(f"INICIANDO ALGORITMO GENÉTICO")
-            print(f"{'═'*60}")
-            print(f"Parâmetros:")
-            print(f"   • Tamanho da População: {self.params['TAMANHO_POPULACAO']}")
-            print(f"   • Tamanho do Cromossomo: {self.params['TAMANHO_CROMOSSOMO']} movimentos")
-            print(f"   • Taxa de Mutação: {self.params['TAXA_MUTACAO']*100}%")
-            print(f"   • Taxa de Crossover: {self.params['TAXA_CROSSOVER']*100}%")
-            print(f"   • Gerações Máximas: {self.params['NUM_GERACOES']}")
-            print(f"   • Tamanho do Torneio: {self.params['TORNEIO_SIZE']}")
-            print(f"\nObjetivo: Encontrar a saída 'S' do labirinto {self.maze.n}x{self.maze.n}")
+            print(f"\n{'='*60}")
+            print(f"INICIANDO ALGORITMO GENETICO")
+            print(f"{'='*60}")
+            print(f"Parametros:")
+            print(f"   - Tamanho da Populacao: {self.params['TAMANHO_POPULACAO']}")
+            print(f"   - Tamanho do Cromossomo: {self.params['TAMANHO_CROMOSSOMO']} movimentos")
+            print(f"   - Taxa de Mutacao: {self.params['TAXA_MUTACAO']*100}%")
+            print(f"   - Taxa de Crossover: {self.params['TAXA_CROSSOVER']*100}%")
+            print(f"   - Geracoes Maximas: {self.params['NUM_GERACOES']}")
+            print(f"   - Tamanho do Torneio: {self.params['TORNEIO_SIZE']}")
+            print(f"Objetivo: Encontrar a saida 'S' do labirinto {self.maze.n}x{self.maze.n}")
             print(f"   Partindo de E = {self.maze.pos_E}")
-            print(f"{'═'*60}\n")
+            print(f"{'='*60}\n")
         
         # FASE 0: Criar população inicial
         population = [self.create_random_chromosome() 
@@ -379,13 +327,13 @@ class GeneticAlgorithm:
                 self.s_position = best_position
                 
                 if self.params['VERBOSE']:
-                    print(f"\n{'═'*60}")
-                    print(f"SAÍDA ENCONTRADA!")
-                    print(f"{'═'*60}")
-                    print(f"   Geração: {generation}")
-                    print(f"   Posição da Saída: {best_position}")
+                    print(f"\n{'='*60}")
+                    print(f"SAIDA ENCONTRADA!")
+                    print(f"{'='*60}")
+                    print(f"   Geracao: {generation}")
+                    print(f"   Posicao da Saida: {best_position}")
                     print(f"   Tamanho do Caminho: {len(best_ever_path)} passos")
-                    print(f"{'═'*60}\n")
+                    print(f"{'='*60}\n")
                 
                 return {
                     'success': True,
@@ -403,12 +351,12 @@ class GeneticAlgorithm:
             
             # Log de progresso
             if self.params['VERBOSE'] and (generation % self.params['VERBOSE_INTERVAL'] == 0 or generation == 0):
-                print(f"\n{'─'*60}")
-                print(f"GERAÇÃO {generation}")
-                print(f"{'─'*60}")
-                print(f"  Melhor Fitness da Geração: {best_fitness:.2f}")
+                print(f"\n{'-'*60}")
+                print(f"GERACAO {generation}")
+                print(f"{'-'*60}")
+                print(f"  Melhor Fitness da Geracao: {best_fitness:.2f}")
                 print(f"  Melhor Fitness Global: {best_ever_fitness:.2f}")
-                print(f"  Posição Final: {best_position}")
+                print(f"  Posicao Final: {best_position}")
                 
                 # Visualização de elitismo
                 if self.params.get('SHOW_ELITISM', False):
@@ -419,8 +367,8 @@ class GeneticAlgorithm:
                 # Mostrar população completa ou top N
                 show_pop = self.params.get('SHOW_POPULATION', 0)
                 if show_pop > 0:
-                    print(f"\n  Top {show_pop} Indivíduos desta Geração:")
-                    print(f"  {'ID':<5} {'Fitness':<15} {'Posição Final':<20} {'Passos':<8} {'Células Únicas':<15}")
+                    print(f"\n  Top {show_pop} Individuos desta Geracao:")
+                    print(f"  {'ID':<5} {'Fitness':<15} {'Posicao Final':<20} {'Passos':<8} {'Celulas Unicas':<15}")
                     print(f"  {'-'*70}")
                     
                     # Ordenar por fitness (melhor primeiro)
@@ -428,7 +376,7 @@ class GeneticAlgorithm:
                     
                     for rank, (idx, (fit, pos, path)) in enumerate(sorted_pop[:show_pop], 1):
                         unique_cells = len(set(path))
-                        status = "★ " if rank == 1 else "  "
+                        status = "[*] " if rank == 1 else "    "
                         print(f"  {status}{idx:<3} {fit:<15.2f} {str(pos):<20} {len(path):<8} {unique_cells:<15}")
                     
                     if show_pop < len(population):
@@ -437,17 +385,17 @@ class GeneticAlgorithm:
                 if self.params.get('VERBOSE_DETAIL', False):
                     # Estatísticas da população
                     valid_paths = sum(1 for f in fitnesses if f > 0)
-                    print(f"  Fitness Médio: {avg_fitness:.2f}")
-                    print(f"  Caminhos Válidos: {valid_paths}/{len(fitnesses)}")
+                    print(f"  Fitness Medio: {avg_fitness:.2f}")
+                    print(f"  Caminhos Validos: {valid_paths}/{len(fitnesses)}")
                     print(f"  Tamanho do Caminho: {len(best_path)} passos")
                     
                     # Análise de convergência
                     if self.params.get('ANALISE_CONVERGENCIA', False):
-                        print(f"  Diversidade Genética: {diversity:.2%}")
+                        print(f"  Diversidade Genetica: {diversity:.2%}")
                         
                         if len(self.best_fitness_history) >= 10:
                             stagnation = len(self.best_fitness_history) - max((i for i, f in enumerate(self.best_fitness_history) if f != best_ever_fitness), default=0) - 1
-                            print(f"  Gerações Estagnadas: {stagnation}")
+                            print(f"  Geracoes Estagnadas: {stagnation}")
                             
                             if diversity < 0.1:
                                 print(f"  ALERTA: Baixa diversidade - risco de convergência prematura!")
@@ -457,12 +405,12 @@ class GeneticAlgorithm:
                     
                     # Mostrar início do caminho
                     if len(best_path) > 1:
-                        path_preview = " → ".join([f"{p}" for p in best_path[:min(5, len(best_path))]])
+                        path_preview = " > ".join([f"{p}" for p in best_path[:min(5, len(best_path))]])
                         if len(best_path) > 5:
-                            path_preview += " → ..."
+                            path_preview += " > ..."
                         print(f"  Caminho: {path_preview}")
                 
-                print(f"{'─'*60}")
+                print(f"{'-'*60}")
                 
                 # Modo lento: adicionar delay entre gerações
                 if self.params.get('MODO_LENTO', False):
@@ -586,15 +534,6 @@ class GeneticAlgorithm:
 
 
 def run_genetic(maze, params=None):
-    """
-    Função de conveniência para executar o GA.
-    
-    Args:
-        maze: objeto Maze
-        params: dicionário com parâmetros opcionais
-        
-    Returns:
-        dict: resultados do GA
-    """
+    # Função de conveniência para executar o GA
     ga = GeneticAlgorithm(maze, params)
     return ga.run()

@@ -1,20 +1,13 @@
-"""a_star.py
-Breve: Implementa o algoritmo A* em grafo para encontrar caminho ótimo entre E e S.
-Segunda linha: usar heurística admissível (octile/euclidiana) para movimentos em 8-direções.
-"""
-
 import math
 
 class Node:
-    """
-    Representa um nó no algoritmo A*.
-    """
+    # Nó para o algoritmo A*
     def __init__(self, position, parent=None, g=0, h=0):
-        self.position = position  # (x, y)
-        self.parent = parent      # Nó pai
-        self.g = g                # Custo do início até aqui
-        self.h = h                # Heurística até o objetivo
-        self.f = g + h            # Custo total
+        self.position = position
+        self.parent = parent
+        self.g = g
+        self.h = h
+        self.f = g + h
     
     def __eq__(self, other):
         return self.position == other.position
@@ -27,65 +20,28 @@ class Node:
 
 
 def heuristic_octile(pos1, pos2):
-    """
-    Calcula a distância octile (Chebyshev + diagonal) entre duas posições.
-    Esta heurística é admissível para movimento em 8 direções.
-    
-    Args:
-        pos1: tupla (linha, coluna)
-        pos2: tupla (linha, coluna)
-        
-    Returns:
-        float: distância heurística
-    """
+    # Distância octile (admissível para 8 direções)
     diff_linha = abs(pos1[0] - pos2[0])
     diff_coluna = abs(pos1[1] - pos2[1])
-    
-    # Distância octile: movimentos diagonais custam sqrt(2) ≈ 1.4
-    # e movimentos ortogonais custam 1
     return (max(diff_linha, diff_coluna) - min(diff_linha, diff_coluna)) * 1.0 + min(diff_linha, diff_coluna) * 1.4
 
 
 def reconstruct_path(node):
-    """
-    Reconstrói o caminho a partir de um nó até o início.
-    
-    Args:
-        node: nó final
-        
-    Returns:
-        list: lista de posições (linha, coluna) do início até o fim
-    """
+    # Reconstrói caminho do nó final até o início
     path = []
     current = node
-    
     while current is not None:
         path.append(current.position)
         current = current.parent
-    
-    return path[::-1]  # Reverter para obter do início ao fim
+    return path[::-1]
 
 
 def a_star(maze, start_pos, goal_pos):
-    """
-    Implementa o algoritmo A* para encontrar o caminho mais curto.
-    
-    Args:
-        maze: objeto Maze
-        start_pos: posição inicial (linha, coluna)
-        goal_pos: posição objetivo (linha, coluna)
-        
-    Returns:
-        list: caminho como lista de posições [(linha, coluna), ...] ou None se não houver caminho
-    """
-    # Nó inicial
+    # Implementa A* para encontrar caminho ótimo
     start_node = Node(start_pos, None, 0, heuristic_octile(start_pos, goal_pos))
     
-    # Listas aberta e fechada
     open_list = [start_node]
     closed_set = set()
-    
-    # Dicionário para rastrear o melhor g para cada posição
     best_g = {start_pos: 0}
     
     while open_list:

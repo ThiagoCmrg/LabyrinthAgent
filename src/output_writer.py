@@ -1,13 +1,7 @@
-"""output_writer.py
-Responsável por escrever seções específicas do relatório de saída.
-Cada função tem uma responsabilidade única (Single Responsibility Principle).
-"""
-
 from output_formatter import *
 
 
 def write_header(f, maze_file, maze, ga_results):
-    """Escreve cabeçalho do relatório."""
     from datetime import datetime
     
     write_section(f, "RELATÓRIO COMPLETO - RESOLUÇÃO DO LABIRINTO")
@@ -19,13 +13,11 @@ def write_header(f, maze_file, maze, ga_results):
 
 
 def write_ga_section_header(f):
-    """Escreve cabeçalho da seção do AG."""
     write_section(f, "FASE 1: ALGORITMO GENÉTICO - HISTÓRICO COMPLETO")
     write_subsection(f, "PARÂMETROS DO AG:")
 
 
 def write_phases_section(f, phase_logs):
-    """Escreve seção de fases do AG."""
     if not phase_logs:
         return
     
@@ -57,7 +49,6 @@ def write_phases_section(f, phase_logs):
 
 
 def _found_exit_in_generation(phases):
-    """Verifica se a saída foi encontrada nesta geração."""
     if not phases:
         return False
     
@@ -67,7 +58,6 @@ def _found_exit_in_generation(phases):
 
 
 def write_ga_result(f, ga_results, ga_steps):
-    """Escreve resultado final do AG."""
     f.write("\n")
     write_subsection(f, "RESULTADO FINAL:")
     f.write(f"  [OK] Saída encontrada na geração {ga_results['generation']}\n")
@@ -77,7 +67,6 @@ def write_ga_result(f, ga_results, ga_steps):
 
 
 def write_generation_evolution(f, generation_details):
-    """Escreve tabela de evolução das gerações."""
     if not generation_details:
         return
     
@@ -118,52 +107,47 @@ def write_generation_evolution(f, generation_details):
 
 
 def write_ga_path(f, path):
-    """Escreve caminho encontrado pelo AG."""
     write_subsection(f, "CAMINHO ENCONTRADO PELO AG:")
     f.write(format_path(path) + "\n\n")
 
 
 def write_elitism_analysis(f, generation_details):
-    """Escreve análise de elitismo (placeholder para expansão futura)."""
     write_subsection(f, "ANÁLISE DE ELITISMO:")
     # Análise pode ser expandida aqui se necessário
 
 
 def write_astar_section(f, optimal_path):
-    """Escreve seção completa do A*."""
-    write_section(f, "FASE 2: ALGORITMO A* - OTIMIZAÇÃO DO CAMINHO")
+    write_section(f, "FASE 2: ALGORITMO A* - OTIMIZACAO DO CAMINHO")
     
     write_subsection(f, "CONFIGURAÇÃO:")
     write_astar_config(f)
     
     write_subsection(f, "RESULTADO:")
-    f.write(f"  [OK] Caminho ótimo encontrado\n")
+    f.write(f"  [OK] Caminho otimo encontrado\n")
     f.write(f"  Tamanho do caminho: {len(optimal_path)} passos\n\n")
     
-    write_subsection(f, "CAMINHO ÓTIMO ENCONTRADO PELO A*:")
+    write_subsection(f, "CAMINHO OTIMO ENCONTRADO PELO A*:")
     f.write(format_path(optimal_path) + "\n\n")
 
 
 def write_comparison(f, ga_steps, astar_steps):
-    """Escreve comparação final entre GA e A*."""
     write_section(f, "COMPARAÇÃO E ANÁLISE FINAL")
     
     difference = ga_steps - astar_steps
     improvement = ((ga_steps - astar_steps) / ga_steps) * 100 if ga_steps > 0 else 0
     
-    write_subsection(f, "MÉTRICAS:")
+    write_subsection(f, "METRICAS:")
     f.write(f"  Passos do GA: {ga_steps}\n")
     f.write(f"  Passos do A*: {astar_steps}\n")
-    f.write(f"  Diferença: {difference} passos\n")
-    f.write(f"  Melhoria: {improvement:.2f}% (A* é mais eficiente)\n\n")
+    f.write(f"  Diferenca: {difference} passos\n")
+    f.write(f"  Melhoria: {improvement:.2f}% (A* e mais eficiente)\n\n")
     
-    write_subsection(f, "CONCLUSÃO:")
-    f.write(f"  O Algoritmo Genético descobriu a saída com sucesso, mas o caminho\n")
-    f.write(f"  não era ótimo. O A* otimizou o trajeto, reduzindo em {improvement:.1f}% o número\n")
-    f.write(f"  de passos necessários.\n\n")
+    write_subsection(f, "CONCLUSAO:")
+    f.write(f"  O Algoritmo Genetico descobriu a saida com sucesso, mas o caminho\n")
+    f.write(f"  nao era otimo. O A* otimizou o trajeto, reduzindo em {improvement:.1f}% o numero\n")
+    f.write(f"  de passos necessarios.\n\n")
 
 
 def write_footer(f):
-    """Escreve rodapé do relatório."""
     write_section(f, "FIM DO RELATÓRIO")
 
