@@ -1,15 +1,9 @@
-"""cli.py
-Interface de linha de comando para executar a simulação.
-Refatorado com Clean Code: usa argparse para parsing limpo.
-"""
-
 import sys
 import argparse
 from simulator import run_simulation
 
 
 def create_parser():
-    """Cria o parser de argumentos com todas as opções configuradas."""
     parser = argparse.ArgumentParser(
         description='Resolução de labirinto com Algoritmo Genético + A*',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -28,13 +22,11 @@ Modos disponíveis:
         '''
     )
     
-    # Argumentos posicionais
     parser.add_argument('maze_file', help='Caminho para o arquivo do labirinto (.txt)')
     parser.add_argument('mode', nargs='?', default='fast', 
                        choices=['fast', 'slow', 'ultra'],
                        help='Modo de execução (padrão: fast)')
     
-    # Argumentos opcionais
     parser.add_argument('--pause', type=int, default=0, metavar='N',
                        help='Pausar a cada N gerações esperando Enter')
     parser.add_argument('--delay', type=float, default=0, metavar='S',
@@ -50,7 +42,6 @@ Modos disponíveis:
 
 
 def validate_args(args):
-    """Valida argumentos e retorna True se válidos."""
     import os
     
     if not os.path.exists(args.maze_file):
@@ -69,15 +60,12 @@ def validate_args(args):
 
 
 def main():
-    """Ponto de entrada da aplicação via linha de comando."""
     parser = create_parser()
     args = parser.parse_args()
     
-    # Validar argumentos
     if not validate_args(args):
         sys.exit(1)
     
-    # Executar simulação
     try:
         results = run_simulation(
             maze_file=args.maze_file,
