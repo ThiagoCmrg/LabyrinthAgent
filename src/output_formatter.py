@@ -108,7 +108,7 @@ def write_ga_parameters(f, chromosome_length):
         "Taxa de Mutação": "1.0%",
         "Taxa de Crossover": "80.0%",
         "Tamanho do Cromossomo": f"{chromosome_length} genes",
-        "Número Máximo de Gerações": "10 (ajustado para matrizes 10x10)",
+        "Número Máximo de Gerações": "10",
         "Tamanho do Torneio": 3,
         "Elitismo": "Ativado"
     }
