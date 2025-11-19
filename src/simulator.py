@@ -44,7 +44,6 @@ def _print_simulation_header(maze_file, mode):
 
 
 def _load_maze(maze_file):
-    """Carrega labirinto do arquivo."""
     print("Carregando labirinto...")
     n, grid, pos_E, pos_S = parse_maze_file(maze_file)
     maze = Maze(n, grid, pos_E, pos_S)
