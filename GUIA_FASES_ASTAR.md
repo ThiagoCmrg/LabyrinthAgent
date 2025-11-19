@@ -476,7 +476,14 @@ Current: (3,3) ← OBJETIVO!
 **Caminho Reconstruído:**
 ```
 (0,0) → (1,0) → (2,1) → (2,2) → (3,3)
-Custo Total: 5.4
+Custo Total: 4.8
+
+Detalhamento:
+  (0,0)→(1,0): ortogonal ↓ = 1.0
+  (1,0)→(2,1): diagonal ↘ = 1.4
+  (2,1)→(2,2): ortogonal → = 1.0
+  (2,2)→(3,3): diagonal ↘ = 1.4
+  Total: 1.0 + 1.4 + 1.0 + 1.4 = 4.8
 ```
 
 ---
