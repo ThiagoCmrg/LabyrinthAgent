@@ -41,10 +41,12 @@ class GeneticAlgorithm:
         self.generation_details = []
         self.phase_logs = []
     
+    #1. Criação
     def create_random_chromosome(self):
         # Cria cromossomo aleatório (sequência de movimentos 0-7)
         return [random.randint(0, 7) for _ in range(self.params['TAMANHO_CROMOSSOMO'])]
     
+    #2. Heuristica (Finesse)
     def evaluate_fitness(self, chromosome):
         # Avalia aptidão: retorna (fitness, posição_final, caminho)
         linha, coluna = self.maze.pos_E
@@ -89,6 +91,7 @@ class GeneticAlgorithm:
         
         return fitness, (linha, coluna), path
     
+    #3. Seleção Torneio
     def tournament_selection(self, population, fitnesses):
         # Seleção por torneio
         tournament_size = self.params['TORNEIO_SIZE']
@@ -97,6 +100,7 @@ class GeneticAlgorithm:
         # Retornar o melhor do torneio
         return max(tournament, key=lambda x: x[1])[0]
     
+    #4. CrossOver
     def crossover(self, parent1, parent2):
         # Crossover de um ponto
         if random.random() > self.params['TAXA_CROSSOVER']:
@@ -111,7 +115,8 @@ class GeneticAlgorithm:
         child2 = parent2[:point] + parent1[point:]
         
         return child1, child2
-    
+
+    #5. Mutação
     def mutate(self, chromosome):
         # Mutação: altera genes aleatoriamente
         mutated = copy.deepcopy(chromosome)
@@ -187,7 +192,7 @@ class GeneticAlgorithm:
             print(f"   Partindo de E = {self.maze.pos_E}")
             print(f"{'='*60}\n")
         
-        # FASE 0: Criar população inicial
+        # Final Elitismo
         population = [self.create_random_chromosome() 
                       for _ in range(self.params['TAMANHO_POPULACAO'])]
         
