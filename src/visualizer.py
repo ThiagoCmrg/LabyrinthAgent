@@ -1,16 +1,5 @@
 def visualize_maze_with_path(maze, path, title="LABIRINTO"):
-    """
-    Visualiza o labirinto com o caminho marcado.
-    
-    Args:
-        maze: Objeto Maze
-        path: Lista de tuplas (linha, coluna) representando o caminho
-        title: Título da visualização
-    
-    Returns:
-        String com a visualização ASCII do labirinto
-    """
-    # Criar uma cópia da grade para visualização
+
     visual_grid = []
     for linha in maze.grid:
         visual_grid.append(list(linha))
@@ -73,17 +62,7 @@ def visualize_maze_with_path(maze, path, title="LABIRINTO"):
 
 
 def visualize_comparison(maze, ga_path, astar_path):
-    """
-    Cria visualização comparando os caminhos do GA e A*.
-    
-    Args:
-        maze: Objeto Maze
-        ga_path: Caminho encontrado pelo Algoritmo Genético
-        astar_path: Caminho ótimo encontrado pelo A*
-    
-    Returns:
-        String com duas visualizações lado a lado
-    """
+
     result = []
     
     # Visualização do caminho GA
@@ -149,15 +128,5 @@ def visualize_comparison(maze, ga_path, astar_path):
 
 
 def create_visual_output(maze, ga_path, astar_path):
-    """
-    Cria a saída visual completa para o relatório.
-    
-    Args:
-        maze: Objeto Maze
-        ga_path: Caminho encontrado pelo Algoritmo Genético
-        astar_path: Caminho ótimo encontrado pelo A*
-    
-    Returns:
-        String com toda a visualização formatada
-    """
+   
     return visualize_comparison(maze, ga_path, astar_path)
