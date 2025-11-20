@@ -25,7 +25,7 @@ def _build_ga_params(mode, verbose_interval, pause_every, delay, analyze, show_e
         'SHOW_ELITISM': show_elitism,
         'SHOW_POPULATION': show_population if show_population >= 0 else 100,
         'TRACK_HISTORY': True,
-        'TRACK_FULL_POPULATION': show_population != 0,
+        'TRACK_FULL_POPULATION': True,  # Sempre rastrear população completa para output
         'TRACK_PHASES': True,
         'NUM_GERACOES': 10,  # Otimizado para matrizes 10x10
         'TAMANHO_POPULACAO': 100,
@@ -145,6 +145,7 @@ def generate_output_file(maze_file, maze, ga_results, optimal_path):
         write_ga_result(f, ga_results, ga_steps)
         write_generation_evolution(f, ga_results.get('generation_details', []))
         write_ga_path(f, ga_results['path'])
+        write_all_populations(f, ga_results.get('generation_details', []))
         write_elitism_analysis(f, ga_results.get('generation_details', []))
         write_astar_section(f, optimal_path)
         write_visual_comparison(f, maze, ga_results['path'], optimal_path)

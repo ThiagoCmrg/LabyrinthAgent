@@ -105,3 +105,51 @@ def write_astar_config(f):
     }
     write_parameters(f, config)
 
+
+def format_chromosome(chromosome, max_genes=20):
+    """Formata cromossomo para exibição."""
+    if len(chromosome) <= max_genes:
+        return str(chromosome)
+    else:
+        # Mostrar primeiros e últimos genes
+        first_part = str(chromosome[:10])[:-1]  # Remove ]
+        last_part = str(chromosome[-10:])[1:]   # Remove [
+        return f"{first_part} ... {last_part}"
+
+
+def write_population_details(f, population_data, generation):
+    """Escreve detalhes completos da população de uma geração."""
+    f.write(f"\n{'='*100}\n")
+    f.write(f"DETALHES DA POPULAÇÃO - GERAÇÃO {generation}\n")
+    f.write(f"{'='*100}\n\n")
+    
+    # Cabeçalho
+    f.write(f"{'ID':<6} {'Fitness':<15} {'Posição':<15} {'Passos':<8} {'Células':<10} {'Cromossomo (primeiros/últimos genes)'}\n")
+    f.write("-" * 100 + "\n")
+    
+    # Ordenar por fitness (melhor primeiro)
+    sorted_pop = sorted(population_data, key=lambda x: x['fitness'], reverse=True)
+    
+    for i, individual in enumerate(sorted_pop):
+        marker = "[★] " if i == 0 else "    "
+        f.write(f"{marker}")
+        f.write(f"{individual['id']:<3} ")
+        f.write(f"{individual['fitness']:<15.2f} ")
+        f.write(f"{str(individual['position']):<15} ")
+        f.write(f"{individual['path_length']:<8} ")
+        f.write(f"{individual['unique_cells']:<10} ")
+        f.write(f"{format_chromosome(individual['chromosome'])}\n")
+    
+    f.write("\n")
+    
+    # Estatísticas resumidas
+    fitnesses = [ind['fitness'] for ind in population_data]
+    f.write("ESTATÍSTICAS DA POPULAÇÃO:\n")
+    f.write(f"  - Melhor Fitness: {max(fitnesses):.2f}\n")
+    f.write(f"  - Pior Fitness: {min(fitnesses):.2f}\n")
+    f.write(f"  - Fitness Médio: {sum(fitnesses)/len(fitnesses):.2f}\n")
+    f.write(f"  - Total de Indivíduos: {len(population_data)}\n")
+    f.write(f"  - Soluções Válidas (fitness > 0): {sum(1 for f in fitnesses if f > 0)}\n")
+    f.write(f"  - Encontraram Saída (fitness >= 10000): {sum(1 for f in fitnesses if f >= 10000)}\n")
+    f.write("\n")
+

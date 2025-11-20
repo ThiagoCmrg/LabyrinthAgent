@@ -107,6 +107,27 @@ def write_generation_evolution(f, generation_details):
     f.write("\n")
 
 
+def write_all_populations(f, generation_details):
+    """Escreve detalhes completos de todas as populações."""
+    if not generation_details:
+        return
+    
+    write_section(f, "POPULAÇÕES COMPLETAS - TODOS OS CROMOSSOMOS")
+    f.write("Esta seção contém TODOS os indivíduos de TODAS as gerações,\n")
+    f.write("incluindo seus cromossomos completos e fitness.\n\n")
+    
+    for detail in generation_details:
+        if 'population' in detail:
+            write_population_details(f, detail['population'], detail['generation'])
+            
+            # Parar se encontrou a solução
+            if detail.get('best_fitness_generation', 0) >= 10000.0:
+                f.write("\n" + "="*100 + "\n")
+                f.write("SAÍDA ENCONTRADA - Gerações posteriores não foram necessárias.\n")
+                f.write("="*100 + "\n\n")
+                break
+
+
 def write_ga_path(f, path):
     write_subsection(f, "CAMINHO ENCONTRADO PELO AG:")
     f.write(format_path(path) + "\n\n")

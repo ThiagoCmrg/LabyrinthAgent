@@ -218,6 +218,29 @@ class GeneticAlgorithm:
             fitness_results = [self.evaluate_fitness(chromo) for chromo in population]
             fitnesses = [f[0] for f in fitness_results]
             
+            # Armazenar cromossomos completos para output detalhado
+            if self.params.get('TRACK_FULL_POPULATION', False):
+                current_gen_data = {
+                    'generation': generation,
+                    'population': []
+                }
+                for i, (chromo, (fit, pos, path)) in enumerate(zip(population, fitness_results)):
+                    current_gen_data['population'].append({
+                        'id': i,
+                        'chromosome': chromo.copy(),
+                        'fitness': fit,
+                        'position': pos,
+                        'path': path.copy(),
+                        'path_length': len(path),
+                        'unique_cells': len(set(path))
+                    })
+                
+                # Adicionar à lista de detalhes
+                if generation >= len(self.generation_details):
+                    self.generation_details.append(current_gen_data)
+                else:
+                    self.generation_details[generation] = current_gen_data
+            
             if self.params.get('TRACK_PHASES', False):
                 self.phase_logs.append({
                     'generation': generation,
@@ -290,34 +313,37 @@ class GeneticAlgorithm:
                 min_fitness = min(fitnesses)
                 max_fitness = max(fitnesses)
                 
-                generation_data = {
-                    'generation': generation,
-                    'best_fitness_generation': best_fitness,
-                    'best_fitness_global': best_ever_fitness,
-                    'avg_fitness': avg_fitness,
-                    'min_fitness': min_fitness,
-                    'max_fitness': max_fitness,
-                    'diversity': diversity,
-                    'valid_paths': valid_paths,
-                    'total_population': len(population),
-                    'best_position': best_position,
-                    'path_length': len(best_path)
-                }
-                
-                # Rastrear população completa se solicitado
-                if self.params.get('TRACK_FULL_POPULATION', False):
-                    population_data = []
-                    for i, (chromo, (fit, pos, path)) in enumerate(zip(population, fitness_results)):
-                        population_data.append({
-                            'id': i,
-                            'fitness': fit,
-                            'position': pos,
-                            'path_length': len(path),
-                            'unique_cells': len(set(path))
-                        })
-                    generation_data['population'] = population_data
-                
-                self.generation_details.append(generation_data)
+                # Se já temos dados desta geração (de TRACK_FULL_POPULATION), atualizar
+                if self.params.get('TRACK_FULL_POPULATION', False) and generation < len(self.generation_details):
+                    generation_data = self.generation_details[generation]
+                    generation_data.update({
+                        'best_fitness_generation': best_fitness,
+                        'best_fitness_global': best_ever_fitness,
+                        'avg_fitness': avg_fitness,
+                        'min_fitness': min_fitness,
+                        'max_fitness': max_fitness,
+                        'diversity': diversity,
+                        'valid_paths': valid_paths,
+                        'total_population': len(population),
+                        'best_position': best_position,
+                        'path_length': len(best_path)
+                    })
+                else:
+                    # Criar novo registro
+                    generation_data = {
+                        'generation': generation,
+                        'best_fitness_generation': best_fitness,
+                        'best_fitness_global': best_ever_fitness,
+                        'avg_fitness': avg_fitness,
+                        'min_fitness': min_fitness,
+                        'max_fitness': max_fitness,
+                        'diversity': diversity,
+                        'valid_paths': valid_paths,
+                        'total_population': len(population),
+                        'best_position': best_position,
+                        'path_length': len(best_path)
+                    }
+                    self.generation_details.append(generation_data)
             
             # Verificar se encontrou a solução
             # Fitness >= 10000.0 indica que a saída foi encontrada
