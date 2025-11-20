@@ -20,7 +20,7 @@ class Node:
 
 
 def heuristic_octile(pos1, pos2):
-    # Distância octile (admissível para 8 direções)
+    # Distância octile (usa diagonais tb)
     diff_linha = abs(pos1[0] - pos2[0])
     diff_coluna = abs(pos1[1] - pos2[1])
     return (max(diff_linha, diff_coluna) - min(diff_linha, diff_coluna)) * 1.0 + min(diff_linha, diff_coluna) * 1.4
