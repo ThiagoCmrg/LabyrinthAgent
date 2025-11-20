@@ -1,4 +1,5 @@
 from output_formatter import *
+from visualizer import create_visual_output
 
 
 def write_header(f, maze_file, maze, ga_results):
@@ -128,6 +129,13 @@ def write_astar_section(f, optimal_path):
     
     write_subsection(f, "CAMINHO OTIMO ENCONTRADO PELO A*:")
     f.write(format_path(optimal_path) + "\n\n")
+
+
+def write_visual_comparison(f, maze, ga_path, astar_path):
+    """Escreve a visualização dos caminhos no relatório."""
+    visual_output = create_visual_output(maze, ga_path, astar_path)
+    f.write(visual_output)
+    f.write("\n")
 
 
 def write_comparison(f, ga_steps, astar_steps):

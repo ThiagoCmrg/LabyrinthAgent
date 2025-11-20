@@ -69,7 +69,7 @@ def _run_astar_phase(maze, s_position):
     return a_star(maze, maze.pos_E, s_position)
 
 
-def _print_summary(ga_results, optimal_path):
+def _print_summary(ga_results, optimal_path, maze):
     improvement = ((len(ga_results['path']) - len(optimal_path)) / len(ga_results['path'])) * 100
     
     print(f"\n{'='*60}")
@@ -81,6 +81,11 @@ def _print_summary(ga_results, optimal_path):
     print(f"   Passos do caminho A*: {len(optimal_path)}")
     print(f"   Melhoria do A*: {improvement:.2f}%")
     print(f"{'='*60}\n")
+    
+    # Imprimir visualização dos caminhos
+    from visualizer import create_visual_output
+    visual_output = create_visual_output(maze, ga_results['path'], optimal_path)
+    print(visual_output)
 
 
 def run_simulation(maze_file, mode='fast', verbose_interval=None, pause_every=0, delay=0, analyze=False, show_elitism=False, show_population=0):
@@ -114,7 +119,7 @@ def run_simulation(maze_file, mode='fast', verbose_interval=None, pause_every=0,
     print(f"\nResultados salvos em: {output_file}")
     
     # 6. Exibir resumo final
-    _print_summary(ga_results, optimal_path)
+    _print_summary(ga_results, optimal_path, maze)
     
     return {
         'ga_results': ga_results,
@@ -143,6 +148,7 @@ def generate_output_file(maze_file, maze, ga_results, optimal_path):
         write_ga_path(f, ga_results['path'])
         write_elitism_analysis(f, ga_results.get('generation_details', []))
         write_astar_section(f, optimal_path)
+        write_visual_comparison(f, maze, ga_results['path'], optimal_path)
         write_comparison(f, ga_steps, astar_steps)
         write_footer(f)
     
