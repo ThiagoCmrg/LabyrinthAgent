@@ -157,5 +157,5 @@ def write_comparison(f, ga_steps, astar_steps):
 
 
 def write_footer(f):
-    write_section(f, "FIM DO RELATÓRIO")
+    write_section(f, "")
 
